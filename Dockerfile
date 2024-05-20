@@ -7,7 +7,8 @@ ENV PYTHONUNBUFFERED True
 # Copy local code to the container image.
 ENV APP_HOME /app
 WORKDIR $APP_HOME
-COPY . ./
+
+COPY . .
 
 # Install production dependencies.
 RUN pip install poetry
@@ -19,42 +20,5 @@ RUN poetry install
 # to be equal to the cores available.
 # Timeout is set to 0 to disable the timeouts of the workers to allow Cloud Run to handle instance scaling.
 # CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app
-CMD HOME=/root poetry run gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app
+CMD HOME=/root poetry run gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 backend-apis.main:app
 
-# EXPOSE 8080 
-# ENV FLASK_APP=main.py
-# CMD ["flask", "run", "--host", "0.0.0.0"]
-
-# docker build -t us-central1-docker.pkg.dev/steveswalker-sandbox/cloud-run-source-deploy/text2sql-hive:latest .
-# gcloud auth configure-docker us-central1-docker.pkg.dev/steveswalker-sandbox/cloud-run-source-deploy
-# docker push us-central1-docker.pkg.dev/steveswalker-sandbox/cloud-run-source-deploy/text2sql-hive:latest
-
-# text2sql@steveswalker-sandbox.iam.gserviceaccount.com
-
-
-# export PROJECT_ID='steveswalker-sandbox'
-
-
-# bigquery execution role
-# gcloud projects add-iam-policy-binding $PROJECT_ID \
-#     --member="serviceAccount:text2sql@steveswalker-sandbox.iam.gserviceaccount.com" \
-#     --role="roles/bigquery.jobUser"
-
-# # text2sql vertex ai prediction role
-# gcloud projects add-iam-policy-binding $PROJECT_ID \
-#     --member="serviceAccount:text2sql@steveswalker-sandbox.iam.gserviceaccount.com" \
-#     --role="roles/aiplatform.user"
-
-# gcloud projects add-iam-policy-binding $PROJECT_ID \
-#     --member="serviceAccount:text2sql@steveswalker-sandbox.iam.gserviceaccount.com" \
-#     --role="roles/logging.logWriter"
-
-# gcloud projects add-iam-policy-binding $PROJECT_ID \
-#     --member="serviceAccount:text2sql@steveswalker-sandbox.iam.gserviceaccount.com" \
-#     --role="roles/run.invoker"
-
-# gcloud run deploy cx-text2sql \
-#   --platform managed --region us-central1 --source . \
-#   --no-allow-unauthenticated \
-#   --service-account text2sql@steveswalker-sandbox.iam.gserviceaccount.com \
-#   --set-env-vars "PROJECT_ID=steveswalker-sandbox" 

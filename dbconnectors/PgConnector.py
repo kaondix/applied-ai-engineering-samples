@@ -69,8 +69,48 @@ def pg_specific_data_types():
 
 class PgConnector(DBConnector, ABC):
     """
-    Instantiates a Postgres Connector. 
+    A connector class for interacting with PostgreSQL databases.
+
+    This class provides methods for establishing connections to PostgreSQL instances, executing SQL queries, retrieving results as DataFrames, caching known SQL queries, and managing embeddings. It utilizes the `pg8000` library for connections and the `asyncpg` library for asynchronous operations.
+
+    Attributes:
+        project_id (str): The Google Cloud project ID where the PostgreSQL instance resides.
+        region (str): The region where the PostgreSQL instance is located.
+        instance_name (str): The name of the PostgreSQL instance.
+        database_name (str): The name of the database to connect to.
+        database_user (str): The username for authentication.
+        database_password (str): The password for authentication.
+        pool (Engine): A SQLAlchemy engine object for managing database connections.
+
+    Methods:
+        getconn() -> connection:
+            Establishes a connection to the PostgreSQL instance and returns a connection object.
+
+        retrieve_df(query) -> pd.DataFrame:
+            Executes a SQL query and returns the results as a pandas DataFrame. Handles potential database errors.
+
+        cache_known_sql() -> None:
+            Caches known good SQL queries into a PostgreSQL table for future reference.
+
+        retrieve_matches(mode, schema, qe, similarity_threshold, limit) -> list:
+            Retrieves similar matches (table schemas, column schemas, or example queries) from the database based on the given mode, query embedding (`qe`), similarity threshold, and limit.
+
+        getSimilarMatches(mode, schema, qe, num_matches, similarity_threshold) -> str:
+            Gets similar matches for tables, columns, or examples asynchronously, formatting the results into a string.
+
+        test_sql_plan_execution(generated_sql) -> Tuple[bool, pd.DataFrame]:
+            Tests the execution plan of a generated SQL query in PostgreSQL. Returns a tuple indicating success and the result DataFrame.
+
+        getExactMatches(query) -> str or None:
+            Checks if the exact question is present in the example SQL set and returns the corresponding SQL query if found.
+
+        return_column_schema_sql(schema) -> str:
+            Returns a SQL query to retrieve column schema information from a PostgreSQL schema.
+
+        return_table_schema_sql(schema) -> str:
+            Returns a SQL query to retrieve table schema information from a PostgreSQL schema.
     """
+
 
     def __init__(self,
                 project_id:str, 
@@ -194,46 +234,34 @@ class PgConnector(DBConnector, ABC):
 
             # Prepare the SQL depending on 'mode' 
             if mode == 'table': 
-                sql = """           
-                    WITH vector_matches AS (
-                    SELECT table_name, table_schema, content,
-                    (embedding <=> $1) AS similarity
+                sql = """
+                    SELECT content as tables_content,
+                    1 - (embedding <=> $1) AS similarity
                     FROM table_details_embeddings
                     WHERE 1 - (embedding <=> $1) > $2
                     AND table_schema = $4
-                    ORDER BY similarity ASC LIMIT $3
-                    )
-                    SELECT content as tables_content
-                    FROM vector_matches
+                    ORDER BY similarity DESC LIMIT $3
                 """
                 
 
             elif mode == 'column': 
                 sql = """
-                    WITH vector_matches AS (
-                    SELECT table_name, table_schema, content,
-                    (embedding <=> $1) AS similarity
+                    SELECT content as columns_content,
+                    1 - (embedding <=> $1) AS similarity
                     FROM tablecolumn_details_embeddings
                     WHERE 1 - (embedding <=> $1) > $2
                     AND table_schema = $4
-                    ORDER BY similarity ASC LIMIT $3
-                    )
-                    SELECT content as columns_content
-                    FROM vector_matches
+                    ORDER BY similarity DESC LIMIT $3
                 """
 
             elif mode == 'example': 
                 sql = """
-                    WITH vector_matches AS (
                     SELECT table_schema, example_user_question, example_generated_sql,
-                    (embedding <=> $1) AS similarity
+                    1 - (embedding <=> $1) AS similarity
                     FROM example_prompt_sql_embeddings
                     WHERE 1 - (embedding <=> $1) > $2
                     AND table_schema = $4
-                    ORDER BY similarity ASC LIMIT $3
-                    )
-                    SELECT example_user_question, example_generated_sql,similarity
-                    FROM vector_matches
+                    ORDER BY similarity DESC LIMIT $3
                 """
 
             else: 
@@ -252,7 +280,9 @@ class PgConnector(DBConnector, ABC):
 
             # CHECK RESULTS 
             if len(results) == 0:
-                print("Did not find any results. Adjust the query parameters.")
+                print(f"Did not find any results  for {mode}. Adjust the query parameters.")
+            else:
+                print(f"Found {len(results)} similarity matches for {mode}.")
 
             if mode == 'table': 
                 name_txt = ''

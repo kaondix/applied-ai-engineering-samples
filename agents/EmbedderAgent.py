@@ -4,10 +4,34 @@ from vertexai.language_models import TextEmbeddingModel
 
 
 
-class EmbedderAgent(Agent, ABC): 
-    """ 
-    This Agent generates embeddings 
-    """ 
+class EmbedderAgent(Agent, ABC):
+    """
+    An agent specialized in generating text embeddings using Large Language Models (LLMs).
+
+    This agent supports two modes for generating embeddings:
+
+    1. "vertex": Directly interacts with the Vertex AI TextEmbeddingModel.
+    2. "lang-vertex": Uses LangChain's VertexAIEmbeddings for a streamlined interface.
+
+    Attributes:
+        agentType (str): Indicates the type of agent, fixed as "EmbedderAgent".
+        mode (str): The embedding generation mode ("vertex" or "lang-vertex").
+        model: The underlying embedding model (Vertex AI TextEmbeddingModel or LangChain's VertexAIEmbeddings).
+
+    Methods:
+        create(question) -> list:
+            Generates text embeddings for the given question(s).
+
+            Args:
+                question (str or list): The text input for which embeddings are to be generated. Can be a single string or a list of strings.
+
+            Returns:
+                list: A list of embedding vectors. Each embedding vector is represented as a list of floating-point numbers.
+
+            Raises:
+                ValueError: If the input `question` is not a string or list, or if the specified `mode` is invalid.
+    """
+
 
     agentType: str = "EmbedderAgent"
 

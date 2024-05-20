@@ -48,10 +48,56 @@ def bq_specific_data_types():
     This list covers the most common datatypes in BigQuery.
     '''
 
+
 class BQConnector(DBConnector, ABC):
     """
-    Instantiates a BigQuery Connector.
+    A connector class for interacting with BigQuery databases.
+
+    This class provides methods for connecting to BigQuery, executing queries, retrieving results as DataFrames, logging interactions, and managing embeddings.
+
+    Attributes:
+        project_id (str): The Google Cloud project ID where the BigQuery dataset resides.
+        region (str): The region where the BigQuery dataset is located.
+        dataset_name (str): The name of the BigQuery dataset to interact with.
+        opendataqna_dataset (str): Name of the dataset to use for OpenDataQnA functionalities.
+        audit_log_table_name (str): Name of the table to store audit logs.
+        client (bigquery.Client): The BigQuery client instance for executing queries.
+
+    Methods:
+        getconn() -> bigquery.Client:
+            Establishes a connection to BigQuery and returns a client object.
+
+        retrieve_df(query) -> pd.DataFrame:
+            Executes a SQL query and returns the results as a pandas DataFrame.
+
+        make_audit_entry(source_type, schema, model, question, generated_sql, found_in_vector, need_rewrite, failure_step, error_msg, FULL_LOG_TEXT) -> str:
+            Logs an audit entry to BigQuery, recording details of the interaction and the generated SQL query.
+
+        create_vertex_connection(connection_id) -> None:
+            Creates a Vertex AI connection for remote model usage in BigQuery.
+
+        create_embedding_model(connection_id, embedding_model) -> None:
+            Creates or replaces an embedding model in BigQuery using a Vertex AI connection.
+
+        retrieve_matches(mode, schema, qe, similarity_threshold, limit) -> list:
+            Retrieves the most similar table schemas, column schemas, or example queries based on the given mode and parameters.
+
+        getSimilarMatches(mode, schema, qe, num_matches, similarity_threshold) -> str:
+            Returns a formatted string containing similar matches found for tables, columns, or examples.
+
+        getExactMatches(query) -> str or None:
+            Checks if the exact question is present in the example SQL set and returns the corresponding SQL query if found.
+
+        test_sql_plan_execution(generated_sql) -> Tuple[bool, str]:
+            Tests the execution plan of a generated SQL query in BigQuery. Returns a tuple indicating success and a message.
+
+        return_table_schema_sql(dataset, table_names=None) -> str:
+            Returns a SQL query to retrieve table schema information from a BigQuery dataset.
+
+        return_column_schema_sql(dataset, table_names=None) -> str:
+            Returns a SQL query to retrieve column schema information from a BigQuery dataset.
     """
+
 
     def __init__(self,
                  project_id:str,
@@ -189,15 +235,15 @@ class BQConnector(DBConnector, ABC):
 
         if mode == 'table':
             sql = '''select base.content as tables_content from vector_search(TABLE `{}.table_details_embeddings`, "embedding", 
-            (SELECT {} as qe), top_k=> {},distance_type=>"COSINE") where distance > {} '''
+            (SELECT {} as qe), top_k=> {},distance_type=>"COSINE") where 1-distance > {} '''
         
         elif mode == 'column':
             sql='''select base.content as columns_content from vector_search(TABLE `{}.tablecolumn_details_embeddings`, "embedding",
-            (SELECT {} as qe), top_k=> {}, distance_type=>"COSINE") where distance > {} '''
+            (SELECT {} as qe), top_k=> {}, distance_type=>"COSINE") where 1-distance > {} '''
 
         elif mode == 'example': 
             sql='''select base.example_user_question, base.example_generated_sql from vector_search ( TABLE `{}.example_prompt_sql_embeddings`, "embedding",
-            (select {} as qe), top_k=> {}, distance_type=>"COSINE") where distance > {} '''
+            (select {} as qe), top_k=> {}, distance_type=>"COSINE") where 1-distance > {} '''
     
         else: 
             ValueError("No valid mode. Must be either table, column, or example")
@@ -206,7 +252,9 @@ class BQConnector(DBConnector, ABC):
         results=self.client.query_and_wait(sql.format('{}.{}'.format(self.project_id,self.opendataqna_dataset),qe,limit,similarity_threshold)).to_dataframe()
         # CHECK RESULTS 
         if len(results) == 0:
-            print("Did not find any results. Adjust the query parameters.")
+            print(f"Did not find any results for {mode}. Adjust the query parameters.")
+        else:
+            print(f"Found {len(results)} similarity matches for {mode}.")
 
         if mode == 'table': 
             name_txt = ''
@@ -294,7 +342,7 @@ class BQConnector(DBConnector, ABC):
             return False,str(e)
 
 
-    def return_table_schema_sql(self, dataset): 
+    def return_table_schema_sql(self, dataset, table_names=None): 
         """
         Returns the SQL query to be run on 'Source DB' to get the Table Schema
         The SQL query below returns a df containing the cols table_schema, table_name, table_description, table_columns (with cols in the table)
@@ -307,34 +355,48 @@ class BQConnector(DBConnector, ABC):
 
         user_dataset = self.project_id + '.' + dataset
 
-        table_schema_sql = f'''
+        table_filter_clause = ""
+
+        if table_names:
+            # Extract individual table names from the input string
+            #table_names = [name.strip() for name in table_names[1:-1].split(",")]  # Handle the string as a list
+            formatted_table_names = [f"'{name}'" for name in table_names]
+            table_filter_clause = f"""AND TABLE_NAME IN ({', '.join(formatted_table_names)})"""
+
+
+        table_schema_sql = f"""
         (SELECT
-          TABLE_CATALOG as project_id, TABLE_SCHEMA as table_schema , TABLE_NAME as table_name,  OPTION_VALUE as table_description,
-          (SELECT STRING_AGG(column_name, ', ') from `{user_dataset}.INFORMATION_SCHEMA.COLUMNS` where TABLE_NAME= t.TABLE_NAME and TABLE_SCHEMA=t.TABLE_SCHEMA) as table_columns
+            TABLE_CATALOG as project_id, TABLE_SCHEMA as table_schema , TABLE_NAME as table_name,  OPTION_VALUE as table_description,
+            (SELECT STRING_AGG(column_name, ', ') from `{user_dataset}.INFORMATION_SCHEMA.COLUMNS` where TABLE_NAME= t.TABLE_NAME and TABLE_SCHEMA=t.TABLE_SCHEMA) as table_columns
         FROM
             `{user_dataset}.INFORMATION_SCHEMA.TABLE_OPTIONS` as t
         WHERE
             OPTION_NAME = "description"
+            {table_filter_clause}
         ORDER BY
             project_id, table_schema, table_name)
 
         UNION ALL
 
-                (SELECT
-          TABLE_CATALOG as project_id, TABLE_SCHEMA as table_schema , TABLE_NAME as table_name,  "NA" as table_description,
-          (SELECT STRING_AGG(column_name, ', ') from `{user_dataset}.INFORMATION_SCHEMA.COLUMNS` where TABLE_NAME= t.TABLE_NAME and TABLE_SCHEMA=t.TABLE_SCHEMA) as table_columns
+        (SELECT
+            TABLE_CATALOG as project_id, TABLE_SCHEMA as table_schema , TABLE_NAME as table_name,  "NA" as table_description,
+            (SELECT STRING_AGG(column_name, ', ') from `{user_dataset}.INFORMATION_SCHEMA.COLUMNS` where TABLE_NAME= t.TABLE_NAME and TABLE_SCHEMA=t.TABLE_SCHEMA) as table_columns
         FROM
-            `{user_dataset}.INFORMATION_SCHEMA.TABLES` as t WHERE NOT EXISTS (SELECT 1   FROM
+            `{user_dataset}.INFORMATION_SCHEMA.TABLES` as t 
+        WHERE 
+            NOT EXISTS (SELECT 1   FROM
             `{user_dataset}.INFORMATION_SCHEMA.TABLE_OPTIONS`  
         WHERE
             OPTION_NAME = "description" AND  TABLE_NAME= t.TABLE_NAME and TABLE_SCHEMA=t.TABLE_SCHEMA)
+            {table_filter_clause}
         ORDER BY
             project_id, table_schema, table_name)
-        '''
+        """
+        return table_schema_sql
+    
 
-        return table_schema_sql 
 
-    def return_column_schema_sql(self, dataset): 
+    def return_column_schema_sql(self, dataset, table_names=None): 
         """
         Returns the SQL query to be run on 'Source DB' to get the column schema 
          
@@ -352,21 +414,34 @@ class BQConnector(DBConnector, ABC):
 
         user_dataset = self.project_id + '.' + dataset
 
-        column_schema_sql =f'''
+        table_filter_clause = ""
+        if table_names:
+            # table_names = [name.strip() for name in table_names[1:-1].split(",")]  # Handle the string as a list
+            formatted_table_names = [f"'{name}'" for name in table_names]
+            table_filter_clause = f"""AND C.TABLE_NAME IN ({', '.join(formatted_table_names)})"""
 
+        column_schema_sql = f"""
         SELECT
-          C.TABLE_CATALOG as project_id, C.TABLE_SCHEMA as table_schema, C.TABLE_NAME as table_name, C.COLUMN_NAME as column_name,
-          C.DATA_TYPE as data_type, C.DESCRIPTION as column_description, CASE WHEN T.CONSTRAINT_TYPE="PRIMARY KEY" THEN "This Column is a Primary Key for this table" WHEN 
-          T.CONSTRAINT_TYPE = "FOREIGN_KEY" THEN "This column is Foreign Key" ELSE NULL END as column_constraints
+            C.TABLE_CATALOG as project_id, C.TABLE_SCHEMA as table_schema, C.TABLE_NAME as table_name, C.COLUMN_NAME as column_name,
+            C.DATA_TYPE as data_type, C.DESCRIPTION as column_description, CASE WHEN T.CONSTRAINT_TYPE="PRIMARY KEY" THEN "This Column is a Primary Key for this table" WHEN 
+            T.CONSTRAINT_TYPE = "FOREIGN_KEY" THEN "This column is Foreign Key" ELSE NULL END as column_constraints
         FROM
-          `{user_dataset}.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` C LEFT JOIN 
-          `{user_dataset}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS` T ON C.TABLE_CATALOG = T.TABLE_CATALOG AND
-          C.TABLE_SCHEMA = T.TABLE_SCHEMA AND C.TABLE_NAME = T.TABLE_NAME AND  T.ENFORCED ='YES'
-            LEFT JOIN `{user_dataset}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE` K
+            `{user_dataset}.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS` C 
+        LEFT JOIN 
+            `{user_dataset}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS` T 
+            ON C.TABLE_CATALOG = T.TABLE_CATALOG AND
+            C.TABLE_SCHEMA = T.TABLE_SCHEMA AND 
+            C.TABLE_NAME = T.TABLE_NAME AND  
+            T.ENFORCED ='YES'
+        LEFT JOIN 
+            `{user_dataset}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE` K
             ON K.CONSTRAINT_NAME=T.CONSTRAINT_NAME AND C.COLUMN_NAME = K.COLUMN_NAME 
+        WHERE
+            1=1
+            {table_filter_clause} 
         ORDER BY
-            project_id, table_schema, table_name, column_name ;
-        '''
+            project_id, table_schema, table_name, column_name;
+    """
 
         return column_schema_sql
 

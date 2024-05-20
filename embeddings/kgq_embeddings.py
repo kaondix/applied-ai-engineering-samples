@@ -32,7 +32,7 @@ async def setup_kgq_table( project_id,
         client=bigquery.Client(project=project_id)
 
         # Delete an old table
-        client.query_and_wait(f'''DROP TABLE IF EXISTS `{project_id}.{schema}.example_prompt_sql_embeddings''')
+        client.query_and_wait(f'''DROP TABLE IF EXISTS `{project_id}.{schema}.example_prompt_sql_embeddings`''')
         # Create a new emptry table
         client.query_and_wait(f'''CREATE TABLE IF NOT EXISTS `{project_id}.{schema}.example_prompt_sql_embeddings` (
                               table_schema string NOT NULL, example_user_question string NOT NULL, example_generated_sql string NOT NULL,
@@ -158,6 +158,33 @@ async def store_kgq_embeddings(df_kgq,
         await conn.close()
 
     else: raise ValueError("Not a valid parameter for a vector store.")
+
+
+def load_kgq_df():
+    import pandas as pd
+
+    current_dir = os.getcwd()
+    root_dir = os.path.expanduser('~')  # Start at the user's home directory
+
+    while current_dir != root_dir:
+        for dirpath, dirnames, filenames in os.walk(current_dir):
+            config_path = os.path.join(dirpath, 'known_good_sql.csv')
+            if os.path.exists(config_path):
+                file_path = config_path  # Update root_dir to the found directory
+                break  # Stop outer loop once found
+
+        current_dir = os.path.dirname(current_dir)
+
+    print("Known Good SQL Found at Path :: "+file_path)
+
+    # Load the file
+    df_kgq = pd.read_csv(file_path)
+    df_kgq = df_kgq.loc[:, ["prompt", "sql", "database_name"]]
+    df_kgq = df_kgq.dropna()
+
+    return df_kgq
+
+
 
 if __name__ == '__main__': 
     from utilities import PG_SCHEMA, PROJECT_ID, PG_INSTANCE, PG_DATABASE, PG_USER, PG_PASSWORD, PG_REGION

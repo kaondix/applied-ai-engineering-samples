@@ -3,11 +3,13 @@ import io
 import sys 
 import pandas as pd
 from dbconnectors import pgconnector,bqconnector
-from agents import EmbedderAgent, ResponseAgent
-from utilities import PG_SCHEMA, PROJECT_ID, PG_INSTANCE, PG_DATABASE, PG_USER, PG_PASSWORD, PG_REGION, BQ_OPENDATAQNA_DATASET_NAME, DATA_SOURCE, BQ_REGION
+from agents import EmbedderAgent, ResponseAgent, DescriptionAgent
+from utilities import EMBEDDING_MODEL, DESCRIPTION_MODEL
 
-embedder = EmbedderAgent('vertex')
-responder = ResponseAgent('gemini-1.0-pro')
+embedder = EmbedderAgent(EMBEDDING_MODEL)
+# responder = ResponseAgent('gemini-1.0-pro')
+descriptor = DescriptionAgent(DESCRIPTION_MODEL)
+
 
 def get_embedding_chunked(textinput, batch_size): 
     for i in range(0, len(textinput), batch_size):
@@ -23,7 +25,7 @@ def get_embedding_chunked(textinput, batch_size):
     return out_df
 
 
-def retrieve_embeddings(SOURCE, SCHEMA="public"): 
+def retrieve_embeddings(SOURCE, SCHEMA="public", table_names = None): 
     """ Augment all the DB schema blocks to create document for embedding """
 
     if SOURCE == "cloudsql-pg":
@@ -36,7 +38,7 @@ def retrieve_embeddings(SOURCE, SCHEMA="public"):
         
 
          #GENERATE MISSING DESCRIPTIONS
-        table_desc_df,column_name_df= responder.generate_missing_descriptions(SOURCE,table_desc_df,column_name_df)
+        table_desc_df,column_name_df= descriptor.generate_missing_descriptions(SOURCE,table_desc_df,column_name_df)
        
         ### TABLE EMBEDDING ###
         """
@@ -94,13 +96,13 @@ def retrieve_embeddings(SOURCE, SCHEMA="public"):
 
     elif SOURCE=='bigquery':
 
-        table_schema_sql = bqconnector.return_table_schema_sql(SCHEMA)
+        table_schema_sql = bqconnector.return_table_schema_sql(SCHEMA, table_names=table_names)
         table_desc_df = bqconnector.retrieve_df(table_schema_sql)
 
-        column_schema_sql = bqconnector.return_column_schema_sql(SCHEMA)
+        column_schema_sql = bqconnector.return_column_schema_sql(SCHEMA, table_names=table_names)
         column_name_df = bqconnector.retrieve_df(column_schema_sql)
         #GENERATE MISSING DESCRIPTIONS
-        table_desc_df,column_name_df= responder.generate_missing_descriptions(SOURCE,table_desc_df,column_name_df)
+        table_desc_df,column_name_df= descriptor.generate_missing_descriptions(SOURCE,table_desc_df,column_name_df)
         
         #TABLE EMBEDDINGS
         table_details_chunked = []

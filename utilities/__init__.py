@@ -2,31 +2,31 @@ import configparser
 import os
 import sys
 
-module_path = os.path.abspath(os.path.join('..'))
-sys.path.append(module_path)
 config = configparser.ConfigParser()
 
-current_dir = os.getcwd()
+def is_root_dir():
+    """
+    Checks if the current working directory is the root directory of a project 
+    by looking for either the "/notebooks" or "/agents" folders.
 
-# while current_dir != os.path.dirname(current_dir):  # Loop until root dir
-#     if any(prefix in current_dir for prefix in module_prefixes):
-#         config_path = os.path.join(current_dir, 'config.ini')
-#         print(config_path)
-#         if os.path.exists(config_path):
-#             config.read(config_path)
-#             root_dir = current_dir
-#             break  # Stop searching once found
-#     current_dir = os.path.dirname(current_dir)  # Move to parent dir
+    Returns:
+        bool: True if either directory exists in the current directory, False otherwise.
+    """
 
-# print("module path: ", module_path)
+    current_dir = os.getcwd()
+    print("current dir: ", current_dir)
+    notebooks_path = os.path.join(current_dir, "notebooks")
+    agents_path = os.path.join(current_dir, "agents")
+    
+    return os.path.exists(notebooks_path) or os.path.exists(agents_path)
 
-module_prefixes = ["Talk2Data", "open-data-qna", "applied-ai-engineering-samples"]
-if any(prefix in module_path for prefix in module_prefixes):
-    config.read(module_path + '/config.ini')
-    root_dir = module_path
-else: 
-    config.read('config.ini')
-    root_dir = os.path.abspath(os.path.join(''))
+if is_root_dir():
+    current_dir = os.getcwd()
+    config.read(current_dir + '/config.ini')
+    root_dir = current_dir
+else:
+    root_dir = os.path.abspath(os.path.join(os.getcwd(), '..'))
+    config.read(root_dir+'/config.ini')
 
 if not 'root_dir' in locals():  # If not found in any parent dir
     raise FileNotFoundError("config.ini not found in current or parent directories.")
@@ -35,12 +35,14 @@ print(f'root_dir set to: {root_dir}')
 
 # [CONFIG]
 EMBEDDING_MODEL = config['CONFIG']['EMBEDDING_MODEL']
+DESCRIPTION_MODEL = config['CONFIG']['DESCRIPTION_MODEL']
 DATA_SOURCE = config['CONFIG']['DATA_SOURCE'] 
 VECTOR_STORE = config['CONFIG']['VECTOR_STORE']
 
-CACHING = config.getboolean('CONFIG','CACHING')
-DEBUGGING = config.getboolean('CONFIG','DEBUGGING')
+#CACHING = config.getboolean('CONFIG','CACHING')
+#DEBUGGING = config.getboolean('CONFIG','DEBUGGING')
 LOGGING = config.getboolean('CONFIG','LOGGING')
+EXAMPLES = config.getboolean('CONFIG', 'KGQ_EXAMPLES')
 
 #[GCP]
 PROJECT_ID =  config['GCP']['PROJECT_ID']
@@ -63,11 +65,13 @@ BQ_TABLE_LIST = config['BIGQUERY']['BQ_TABLE_LIST']
 
 
 __all__ = ["EMBEDDING_MODEL",
+           "DESCRIPTION_MODEL",
            "DATA_SOURCE",
            "VECTOR_STORE",
-           "CACHING",
-           "DEBUGGING",
+           #"CACHING",
+           #"DEBUGGING",
            "LOGGING",
+           "EXAMPLES", 
            "PROJECT_ID",
            "PG_REGION",
            "PG_SCHEMA",
@@ -80,4 +84,5 @@ __all__ = ["EMBEDDING_MODEL",
            "BQ_OPENDATAQNA_DATASET_NAME",
            "BQ_LOG_TABLE_NAME",
            "BQ_TABLE_LIST",
-           "root_dir"]
+           "root_dir",
+           "save_config"]

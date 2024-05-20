@@ -1,12 +1,12 @@
 export const firebaseConfig = {
-  apiKey: "AIzaSyAu6BDMoMW9R5iDt1D1WQ9CoxR8_O10mHY",
-  authDomain: "eight-p-o.firebaseapp.com",
-  projectId: "eight-p-o",
-  storageBucket: "eight-p-o.appspot.com",
-  messagingSenderId: "610304981648",
-  appId: "1:610304981648:web:8650647a9d4574d027b615"
+  apiKey: "AIzaSyClfknLwWGTdCSNc-0MPBQS676ZE-rQFRo",
+  authDomain: "ten-p-o.firebaseapp.com",
+  projectId: "ten-p-o",
+  storageBucket: "ten-p-o.appspot.com",
+  messagingSenderId: "340360744896",
+  appId: "1:340360744896:web:27f4bfff36c47df65b8225"
 };
 
-export const ENDPOINT_OPENDATAQNA = 'https://opendataqna-zxthtz2kga-uc.a.run.app'
+export const ENDPOINT_OPENDATAQNA = 'https://opendataqna-z5fchzhuiq-uc.a.run.app'
 
     

@@ -10,10 +10,65 @@ from dbconnectors import pgconnector, bqconnector
 
 
 
-class DebugSQLAgent(Agent, ABC): 
-    """ 
-    This Chat Agent checks the SQL for vailidity
-    """ 
+class DebugSQLAgent(Agent, ABC):
+    """
+    An agent designed to debug and refine SQL queries for BigQuery or PostgreSQL databases.
+
+    This agent interacts with a chat-based language model (CodeChat or Gemini) to iteratively troubleshoot SQL queries. It receives feedback in the form of error messages and uses the model's capabilities to generate alternative queries that address the identified issues. The agent strives to maintain the original intent of the query while ensuring its syntactic and semantic correctness.
+
+    Attributes:
+        agentType (str): Indicates the type of agent, fixed as "DebugSQLAgent".
+        chat_model_id (str): The ID of the chat model to use for debugging. Valid options are:
+            - "codechat-bison-32k"
+            - "gemini-1.0-pro" 
+            - "gemini-ultra"
+
+    Methods:
+        init_chat(source_type, tables_schema, tables_detailed_schema, sql_example) -> ChatSession:
+            Initializes a chat session with the chosen chat model.
+
+            Args:
+                source_type (str): The database type ("bigquery" or "postgresql").
+                tables_schema (str): A description of the available tables and their columns.
+                tables_detailed_schema (str): Detailed descriptions of the columns in the tables.
+                sql_example (str, optional): An example SQL query for reference. Defaults to "-No examples provided..-".
+
+            Returns:
+                ChatSession: The initiated chat session object.
+
+        rewrite_sql_chat(chat_session, question, error_df) -> str:
+            Generates an alternative SQL query based on the chat session, original query, and error message.
+
+            Args:
+                chat_session (ChatSession): The active chat session.
+                question (str): The original SQL query.
+                error_df (pandas.DataFrame): The error message as a DataFrame.
+
+            Returns:
+                str: The rewritten SQL query.
+
+        start_debugger(source_type, query, user_question, SQLChecker, tables_schema, tables_detailed_schema, AUDIT_TEXT, similar_sql, DEBUGGING_ROUNDS, LLM_VALIDATION) -> Tuple[str, bool, str]:
+            Initiates the debugging process and iteratively refines the SQL query.
+
+            Args:
+                source_type (str): The database type ("bigquery" or "postgresql").
+                query (str): The initial SQL query to debug.
+                user_question (str): The user's original question for reference.
+                SQLChecker: An object to validate the SQL syntax.
+                tables_schema (str): Table schema information.
+                tables_detailed_schema (str): Detailed column descriptions.
+                AUDIT_TEXT (str): Textual audit trail of the debugging process.
+                similar_sql (str, optional): Example SQL queries. Defaults to "-No examples provided..-".
+                DEBUGGING_ROUNDS (int, optional): Maximum debugging attempts. Defaults to 2.
+                LLM_VALIDATION (bool, optional): Whether to use LLM for syntax validation. Defaults to True.
+
+            Returns:
+                Tuple[str, bool, str]:
+                    - The final refined SQL query (or the original if unchanged).
+                    - A boolean indicating if the final query is considered invalid.
+                    - The updated AUDIT_TEXT with debugging steps.
+    """
+
 
     agentType: str = "DebugSQLAgent"
 
@@ -103,7 +158,7 @@ class DebugSQLAgent(Agent, ABC):
         return chat_session
 
 
-    def rewrite_sql_chat(self, chat_session, question, error_df):
+    def rewrite_sql_chat(self, chat_session, sql, question, error_df):
 
 
         context_prompt = f"""
@@ -113,6 +168,9 @@ class DebugSQLAgent(Agent, ABC):
             Avoid repeating suggestions.
 
             Original SQL:
+            {sql}
+
+            Original Question: 
             {question}
 
             Error:
@@ -144,7 +202,8 @@ class DebugSQLAgent(Agent, ABC):
                         tables_detailed_schema,
                         AUDIT_TEXT, 
                         similar_sql="-No examples provided..-", 
-                        DEBUGGING_ROUNDS = 2):
+                        DEBUGGING_ROUNDS = 2,
+                        LLM_VALIDATION=True):
         i = 0  
         STOP = False 
         invalid_response = False 
@@ -153,14 +212,23 @@ class DebugSQLAgent(Agent, ABC):
 
         AUDIT_TEXT=AUDIT_TEXT+"\n\nEntering the debugging steps!"
         while (not STOP):
-            # sql = query.replace("```sql","").replace("```","").replace("EXPLAIN ANALYZE ","")
-            json_syntax_result = SQLChecker.check(user_question,tables_schema,tables_detailed_schema, sql) 
 
+            # Check if LLM Validation is enabled 
+            if LLM_VALIDATION: 
+                # sql = query.replace("```sql","").replace("```","").replace("EXPLAIN ANALYZE ","")
+                json_syntax_result = SQLChecker.check(user_question,tables_schema,tables_detailed_schema, sql) 
 
+            else: 
+                json_syntax_result['valid'] = True 
 
             if json_syntax_result['valid'] is True:
                 # Testing SQL Execution
-                AUDIT_TEXT=AUDIT_TEXT+"\nGenerated SQL is syntactically correct as per LLM Validation!"
+                if LLM_VALIDATION: 
+                    AUDIT_TEXT=AUDIT_TEXT+"\nGenerated SQL is syntactically correct as per LLM Validation!"
+                
+                else: 
+                    AUDIT_TEXT=AUDIT_TEXT+"\nLLM Validation is deactivated. Jumping directly to dry run execution."
+
                 # print(AUDIT_TEXT)
                 if source_type=='bigquery':
                     connector=bqconnector
@@ -171,7 +239,7 @@ class DebugSQLAgent(Agent, ABC):
                 print("exec_result_df:" + exec_result_df)
                 if not correct_sql:
                         AUDIT_TEXT=AUDIT_TEXT+"\nGenerated SQL failed on execution! Here is the feedback from bigquery dryrun/ explain plan:  \n" + str(exec_result_df)
-                        rewrite_result = self.rewrite_sql_chat(chat_session, sql, exec_result_df)
+                        rewrite_result = self.rewrite_sql_chat(chat_session, sql, user_question, exec_result_df)
                         print('\n Rewritten and Cleaned SQL: ' + str(rewrite_result))
                         AUDIT_TEXT=AUDIT_TEXT+"\nRewritten and Cleaned SQL: \n' + str({rewrite_result})"
                         sql = str(rewrite_result).replace("```sql","").replace("```","").replace("EXPLAIN ANALYZE ","")
@@ -182,7 +250,7 @@ class DebugSQLAgent(Agent, ABC):
                 AUDIT_TEXT=AUDIT_TEXT+'\nGenerated qeury failed on syntax check as per LLM Validation! \nError Message from LLM:  '+ str(json_syntax_result) + '\nRewriting the query...'
                 
                 syntax_err_df = pd.read_json(json.dumps(json_syntax_result))
-                rewrite_result=self.rewrite_sql_chat(chat_session, sql, syntax_err_df)
+                rewrite_result=self.rewrite_sql_chat(chat_session, sql, user_question, exec_result_df)
                 print(rewrite_result)
                 AUDIT_TEXT=AUDIT_TEXT+'\n Rewritten SQL: ' + str(rewrite_result)
                 sql=str(rewrite_result).replace("```sql","").replace("```","").replace("EXPLAIN ANALYZE ","")

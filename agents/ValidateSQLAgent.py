@@ -4,10 +4,31 @@ from .core import Agent
 
 
 
-class ValidateSQLAgent(Agent, ABC): 
-    """ 
-    This Chat Agent checks the SQL for vailidity
-    """ 
+class ValidateSQLAgent(Agent, ABC):
+    """
+    An agent that validates the syntax and semantic correctness of SQL queries.
+
+    This agent leverages a language model (currently Gemini) to analyze a given SQL query against a provided database schema. It assesses whether the query is valid according to a set of predefined guidelines and generates a JSON response indicating the validity status and any potential errors.
+
+    Attributes:
+        agentType (str): Indicates the type of agent, fixed as "ValidateSQLAgent".
+
+    Methods:
+        check(user_question, tables_schema, columns_schema, generated_sql) -> dict:
+            Determines the validity of an SQL query and identifies potential errors.
+
+            Args:
+                user_question (str): The original question posed by the user (used for context).
+                tables_schema (str): A description of the database tables and their relationships.
+                columns_schema (str): Detailed descriptions of the columns within the tables.
+                generated_sql (str): The SQL query to be validated.
+
+            Returns:
+                dict: A JSON-formatted dictionary with the following keys:
+                    - "valid": A boolean value indicating whether the query is valid or not.
+                    - "errors": A string describing any errors found in the query (empty if valid).
+    """
+
 
     agentType: str = "ValidateSQLAgent"
 

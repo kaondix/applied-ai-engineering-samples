@@ -44,14 +44,14 @@ class Agent(ABC):
         elif model_id == 'gemini-1.0-pro':
             self.model = GenerativeModel("gemini-1.0-pro-001")
             self.safety_settings: Optional[dict] = {
-                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-            }
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+        }
         else:
             raise ValueError("Please specify a compatible model.")
 
     def generate_llm_response(self,prompt):
-        context_query = self.model.generate_content(prompt,safety_settings=self.safety_settings,stream=False)
+        context_query = self.model.generate_content(prompt,stream=False)
         return str(context_query.candidates[0].text).replace("```sql", "").replace("```", "")

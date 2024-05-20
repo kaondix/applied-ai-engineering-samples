@@ -9,11 +9,9 @@ from google.cloud import bigquery
 from dbconnectors import pgconnector
 from agents import EmbedderAgent
 from sqlalchemy.sql import text
-from utilities import PG_SCHEMA, PROJECT_ID, PG_INSTANCE, PG_DATABASE, PG_USER, PG_PASSWORD, PG_REGION, BQ_OPENDATAQNA_DATASET_NAME, DATA_SOURCE, BQ_REGION
+from utilities import VECTOR_STORE,PG_SCHEMA, PROJECT_ID, PG_INSTANCE, PG_DATABASE, PG_USER, PG_PASSWORD, PG_REGION, BQ_OPENDATAQNA_DATASET_NAME, DATA_SOURCE, BQ_REGION, EMBEDDING_MODEL
 
-print("Source Selected is "+ DATA_SOURCE)
-
-embedder = EmbedderAgent('vertex')
+embedder = EmbedderAgent(EMBEDDING_MODEL)
 
 async def store_schema_embeddings(table_details_embeddings, 
                             tablecolumn_details_embeddings, 
@@ -24,7 +22,7 @@ async def store_schema_embeddings(table_details_embeddings,
                             database_user,
                             database_password,
                             region,
-                            VECTOR_STORE = "cloudsql-pgvector"):
+                            VECTOR_STORE):
     """ 
     Store the vectorised table and column details in the DB table.
     This code may run for a few minutes.  
@@ -157,10 +155,14 @@ async def store_schema_embeddings(table_details_embeddings,
                         )
         client.load_table_from_dataframe(tablecolumn_details_embeddings,f'{project_id}.{schema}.tablecolumn_details_embeddings')
 
+        client.query_and_wait(f'''CREATE TABLE IF NOT EXISTS `{project_id}.{schema}.example_prompt_sql_embeddings` (
+                              table_schema string NOT NULL, example_user_question string NOT NULL, example_generated_sql string NOT NULL,
+                              embedding ARRAY<FLOAT64>)''')
+                              
     else: raise ValueError("Please provide a valid Vector Store.")
     return "Embeddings are stored successfully"
 
-async def add_sql_embedding(user_question, generated_sql, database,VECTOR_STORE = "cloudsql-pgvector"):
+async def add_sql_embedding(user_question, generated_sql, database):
         
         emb=embedder.create(user_question)
 
@@ -209,14 +211,14 @@ async def add_sql_embedding(user_question, generated_sql, database,VECTOR_STORE 
 
             client=bigquery.Client(project=PROJECT_ID)
         
-            client.query_and_wait(f'''CREATE TABLE IF NOT EXISTS `{project_id}.{schema}.example_prompt_sql_embeddings` (
+            client.query_and_wait(f'''CREATE TABLE IF NOT EXISTS `{PROJECT_ID}.{BQ_OPENDATAQNA_DATASET_NAME}.example_prompt_sql_embeddings` (
                 table_schema string NOT NULL, example_user_question string NOT NULL, example_generated_sql string NOT NULL,
                 embedding ARRAY<FLOAT64>)''')
-            client.query_and_wait(f'''DELETE FROM `{project_id}.{schema}.example_prompt_sql_embeddings`
+            client.query_and_wait(f'''DELETE FROM `{PROJECT_ID}.{BQ_OPENDATAQNA_DATASET_NAME}.example_prompt_sql_embeddings`
                                 WHERE table_schema= '{database}' and example_user_question= '{user_question}' '''
                                     )
                         # embedding=np.array(row["embedding"])
-            client.query_and_wait(f'''INSERT INTO `{project_id}.{schema}.example_prompt_sql_embeddings` 
+            client.query_and_wait(f'''INSERT INTO `{PROJECT_ID}.{BQ_OPENDATAQNA_DATASET_NAME}.example_prompt_sql_embeddings` 
                         VALUES ('{database}','{user_question}' , 
                         '{generated_sql}',{emb})''')
         return 1

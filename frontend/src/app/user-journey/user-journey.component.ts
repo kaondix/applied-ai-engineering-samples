@@ -4,8 +4,6 @@ import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { HomeService } from '../shared/services/home.service';
 import { ThemePalette } from '@angular/material/core';
-import { Observable } from 'rxjs';
-
 
 @Component({
   selector: 'app-user-journey',
@@ -43,47 +41,24 @@ export class UserJourneyComponent {
 
   userJourneyList: any = [{
     userId: "User journey 1",
-    // userImg: "/assets/Persona headshots/Marla.png",
-    // userTitle: "Postgress Business User",
     userTitle: "Business User",
     userContent: [
       "Natural language questions to the database.",
     ]
-  },
-  {
-
-    userId: "User journey 2",
-    // userImg: "/assets/Persona headshots/Firefly professional headshot of african american man 82343.jpg",
-    // userTitle: "Postgress Opertaional User",
-    userTitle: "Technical User",
-    userContent: [
-      "Select dataset, project, schema information",
-      "Log analysis & monitoring"]
-  },
-  {
-    userId: "User journey 3",
-    userTitle: "Opertaional User",
-    userContent: [
-      "Natural language questions to the database.",
-    ]
-  }
-  ];
+  }];
 
   async navigateToHome(userTitle: String) {
 
     if (userTitle === 'Business User') {
       this.homeService.checkuserType = 'Business';
       this.showProgressPreviewBar = true;
-      // new Promise<any>(async res => {
       this.homeService.getAvailableDatabases().subscribe((res: any) => {
-        console.log(res)
         if (res && res.ResponseCode === 200) {
           this.homeService.setAvailableDBList(res.KnownDB);
           this.showProgressPreviewBar = false;
           this._router.navigate(['home']);
         }
       })
-      //  })
     }
     if (userTitle === 'Opertaional User') {
       this.homeService.checkuserType = 'Operational';
