@@ -10,7 +10,7 @@
 </p>
 <h1 align="center">Open Data QnA - Chat with your SQL Database</h1> 
 
-Overview
+✨ Overview
 -------------
 The **Open Data QnA** python library enables you to chat with your databases by leveraging LLM Agents on Google Cloud.
 
@@ -48,7 +48,7 @@ It is built on a modular design and currently supports the following components:
 
 **Note:** the library was formerly named Talk2Data. You may still find artifacts with the old naming in this repository. 
 
-Architecture
+📏 Architecture
 -------------
 <p align="center">
     <a href="utilities/imgs/Open Data QnA Solution Architecture.png">
@@ -56,112 +56,20 @@ Architecture
     </a>
 </p>
 
+A detailed description of the Architecture can be found [`here`](/docs/architecture.md) in the docs. 
 
-Architecture Summary
+
+🧬 Repository Structure 
 -------------
-Open Data QnA operates in a sequence of well-defined steps, orchestrating various agents to process user queries and generate informative responses:
+Details on the Repository Structure can be found [`here`](/docs/repo_structure.md) in the docs. 
 
-* **Vector Store Creation:** The vector store is initialized, storing embeddings of known good SQL queries, table schemas, and column details. This serves as a knowledge base for retrieval-augmented generation (RAG).
-
-* **RAG (Retrieval-Augmented Generation):** User queries are embedded and compared to the vector store to retrieve relevant context (table/column details and similar past queries) for improved query generation.
-
-* **SQL Generation (BuildSQLAgent):**  The BuildSQLAgent leverages the retrieved context and the user's natural language question to generate an initial SQL query.
-
-* **Optional Validation (ValidateSQLAgent):** If enabled, the ValidateSQLAgent assesses the generated SQL for syntactic and semantic correctness.
-
-* **Optional Debugging (DebugSQLAgent):** If the initial SQL is invalid and debugging is enabled, the DebugSQLAgent iteratively refines the query based on error feedback.
-
-* **SQL Execution (Dry Run/Explain):** The refined SQL query is tested with a dry run (BigQuery) or explain plan (PostgreSQL) to estimate resource usage and identify potential errors.
-
-* **SQL Execution (Full Run):** If the query is deemed valid, it's executed against the database to fetch the results.
-
-* **Response Generation (ResponseAgent):** The ResponseAgent analyzes the SQL results and the user's question to generate a natural language response, providing a clear and concise answer.
-
-* **Optional Visualization (VisualizeAgent):** If enabled, the VisualizeAgent suggests suitable chart types and generates JavaScript code for Google Charts to display the SQL results in a visually appealing manner.
-
-
-**Key Points:**
-
-* **Modularity:** Each step is handled by a specialized agent, allowing for flexibility and customization.
-* **RAG Enhancement:** The use of retrieval-augmented generation leverages existing knowledge for better query formulation.
-* **Validation and Debugging:** Optional agents enhance the reliability and accuracy of generated queries.
-* **Informative Responses:** The ResponseAgent aims to provide meaningful and contextually relevant answers.
-* **Visual Appeal:** The optional visualization adds an interactive layer to the user experience.
-
-
-
-Solution Overview
+⚙️ Prerequisites   
 -------------
-<p align="center">
-    <a href="utilities/imgs/Open Data QnA Solution Overview.png">
-        <img src="utilities/imgs/OpenDataQnA-SolutionOverview.png" alt="aaie image">
-    </a>
-</p>
+This library assumes that the source database is already set up in your GCP project. If a data source has not been set up, use the notebooks below to copy a public dataset from BigQuery to Cloud SQL PostgreSQL or from BigQuery into your GCP project.
+* PostgreSQL on Google Cloud SQL (Copy Sample Data: [0_CopyDataToCloudSqlPG.ipynb](0_CopyDataToCloudSqlPG.ipynb))
+* BigQuery (Copy Sample Data: [0_CopyDataToBigQuery.ipynb](0_CopyDataToBigQuery.ipynb))
 
-
-Repository Structure 
--------------
-
-```
-.
-├── agents
-  └── __init__.py
-  └── core.py
-  └── BuildSQLAgent.py
-  └── DebugSQLAgent.py
-  └── EmbedderAgent.py
-  └── ResponseAgent.py
-  └── ValidateSQLAgent.py
-  └── VisualizeAgent.py
-└── Dockerfile
-└── backend-apis
-  └── policy.yaml
-  └── main.py
-└── dbconnectors
-  └── __init__.py
-  └── core.py
-  └── PgConnector.py
-  └── BQConnector.py
-└── embeddings
-  └── __init__.py
-  └── retrieve_embeddings.py
-  └── store_embeddings.py
-  └──kgq_embeddings.py
-└── frontend
-└── notebooks
-  └── 0_CopyDataToBigQuery.ipynb
-  └── 0_CopyDataToBigQuery.ipynb
-  └── 1_SetUpVectorStore.ipynb
-  └── 2_RunOpenDataQnA.ipynb
-  └── 3_LoadKnownGoodSQL.ipynb
-└── scripts
-  └── bq_to_pg.py
-  └── cache_known_sql.py
-  └── known_good_sql.csv
-└── utilities
-  └── __init__.py
-└── pyproject.toml
-└── config.ini
-```
-
-- [`/agents`](/agents): Source code for the LLM Agents.  
-- [`/dbconnectors`](/dbconnectors): Source code for backend APIs.
-- [`/embeddings`](/embeddings): Source code for creating and storing embeddings.
-  - [`/retrieve_embeddings.py`](/embeddings/retrieve_embeddings.py): Source code for retrieving table schema and embedding creation. 
-  - [`/store_embeddings.py`](/embeddings/store_embeddings.py): Source code for storing table schema embeddings in Vector Store.
-  - [`/kgq_embeddings.py`](/embeddings/kgq_embeddings.py): Source code for loading good sqls and creating embeddings in the Vector Store) 
-- [`/notebooks`](/notebooks): Sample notebooks demonstrating the usage of this library.  
-- [`/scripts`](/scripts): Additional scripts for initial setup.
-  - [`/bq_to_pg.py`](/scripts/bq_to_pg.py): Source code for exporting BigQuery tables to PostgreSQL on Google Cloud SQL. 
-  - [`/copy_select_table_column_bigquery.py`](/scripts/copy_select_table_column_bigquery.py): Code Sample to copy select tables and columns from one BQ table to another; add table and column descriptions from csv file.
-  - [`/tables_columns_descriptions.csv`](/scripts/tables_columns_descriptions.csv): CSV file containing table and column names and descriptions to be copied 
-  - [`/known_good_sql.csv`](/scripts/known_good_sql.csv): CSV files
-- [`/Dockerfile`](/Dockerfile): Dockerfile for deployment of backend apis. It is placed at the root folder to give it right context and access to the files.
-- [`/backend-apis`](/backend-apis/) : Cloud Run based api deployement for frontend to demo the solution on a UI
-- [`/frontend`](/frontend) : Angular based frontend code to deploy demo app using the API developed with [`/main.py`](backend-apis/main.py)
-
-
-Getting Started: Quick Start   
+🏁 Getting Started: Quick Start   
 -------------
 
 **Quickstart with Open Data QnA: [Standalone BigQuery Notebook](/notebooks/(standalone)Run_OpenDataQnA.ipynb)**
@@ -169,136 +77,59 @@ Getting Started: Quick Start
 This notebook offers a streamlined way to experience the core functionality of Open Data QnA using BigQuery as both the data source and vector store. While it doesn't encompass the full flexibility of the repository setup, it's a perfect starting point to quickly test and explore the conversational querying capabilities of Open Data QnA with your own BigQuery datasets.
 
 
-Getting Started: Main Repository 
+🏁 Getting Started: Main Repository 
 -------------
-    
-### Clone the repository and switch to the correct branch 
+ℹ️ **You can setup this solution with two approaches. Choose one based on your requirements:**
+  - **A)** Using Jupyter Notebooks (For better view at what is happening at each stage of the solution)
+  - **B)** Using CLI (For ease of use and running with simple python commands, without the need to understand every step of the solution)
+
+
+### Clone the repository and switch to the correct directory 
    
     git clone -b opendataqna git@github.com:GoogleCloudPlatform/applied-ai-engineering-samples.git
     cd applied-ai-engineering-samples
 
-You can setup this solution with two approaches. Choose one based on your requirement
-  - Using Jupyter Notebooks (For better view at what is happening at each stage of the solution)
-  - Using CLI (For ease of use and running with simple python command without the need to understand every step of the solution)
+__________
 
-## Jupyter Notebook Based Approach
+### A) Jupyter Notebook Based Approach
 
-### 1. Run the [1_Setup_OpenDataQnA](/notebooks/1_Setup_OpenDataQnA.ipynb)
-
-**Notebook Summary**
+#### 1. Run the [1_Setup_OpenDataQnA](/notebooks/1_Setup_OpenDataQnA.ipynb) (Run Once for Initial Setup) 
 
 This notebook guides you through the setup and execution of the Open Data QnA application. It provides comprehensive instructions for configuring your environment, preparing the vector store.
 
-### 2. Run the [2_Run_OpenDataQnA](/notebooks/2_Run_OpenDataQnA.ipynb)
-
-**Notebook Summary**
+#### 2. Run the [2_Run_OpenDataQnA](/notebooks/2_Run_OpenDataQnA.ipynb)
 
 This notebook guides you by reading the configuration you setup with [1_Setup_OpenDataQnA](/1_Setup_OpenDataQnA) and running the pipeline to answer questions about your data.
 
-### 3. [Loading Known Good SQL Examples](/notebooks/3_LoadKnownGoodSQL.ipynb)
+#### 3. [Loading Known Good SQL Examples](/notebooks/3_LoadKnownGoodSQL.ipynb)
    
    In case you want to separately load Known Good SQLs please run this notebook once the config variables are setup in config.ini file. This can be run multiple times just to load the known good sql queries and create embeddings for it.
 
-## Command Line Interface (CLI) Based Approach
+___________
 
-### 1. Add Configuration values for the solution in [config.ini](/config.ini)
+### B) Command Line Interface (CLI) Based Approach
 
-For setup we require details for vector store, source etc. Edit the [config.ini](/config.ini) add values for the parameters based of below information
+#### 1. Add Configuration values for the solution in [config.ini](/config.ini)
 
-This section assumes that a datasource is already set up in your GCP project. If a datasource has not been set up, use the notebooks below to copy a public data set from BigQuery to Cloud SQL or BigQuery on your GCP project
+For setup we require details for vector store, source database etc. Edit the [config.ini](/config.ini) file and add values for the parameters based of below information.
+
+ℹ️ Follow the guidelines from the [config guide document](/docs/config_guide.md) to populate your [config.ini](/config.ini) file.
 
 
-Enabled Data Sources:
-* PostgreSQL on Google Cloud SQL (Copy Sample Data: [0_CopyDataToCloudSqlPG.ipynb](0_CopyDataToCloudSqlPG.ipynb))
-* BigQuery (Copy Sample Data: [0_CopyDataToBigQuery.ipynb](0_CopyDataToBigQuery.ipynb))
-
-Enabled Vector Stores:
-* pgvector on PostgreSQL 
-* BigQuery vector
-
+#### 2. Creating Virtual Environment and Install Dependencies
 
 ```
-[CONFIG]
-embedding_model = <LLM Model that should be used for created vector embeddings> # Options: 'vertex' or 'vertex-lang'
-description_model = <Vertex AI model that will be used to create missing description for your tables and columns> #Options 'gemini-1.0-pro', 'gemini-1.5-pro', 'text-bison-32k'
-data_source = 'bigquery' #  Options: 'bigquery' and 'cloudsql-pg' 
-vector_store = 'bigquery-vector' # Options: 'bigquery-vector', 'cloudsql-pgvector'
-logging = <Boolean value to either add logs or not. Currently logs into BigQuery Only> #Options True or False 
-kgq_examples = <Boolean value to either tell the solution that we have Known Good SQLs or Not> #Options True or False 
-
-[GCP]
-project_id = <Your GCP Project ID>
-
-[PGCLOUDSQL]
-# If you want to use PG as source, fill out the values below
-pg_region = <GCP valid region code>
-pg_instance = <PostgreSQL Instance name you want to create/provide the existing one>
-pg_database = <PostgreSQL Database name you want to create/provide the existing one>
-pg_user = <PostgreSQL username that to be created for the solution to connect>
-pg_password = <Password for the above user created>
-pg_schema = <PostgreSQL Schema name on which you want to run the solution against>
-
-[BIGQUERY]
-# If you want to use BQ as source, fill out the values below
-bq_dataset_region = <GCP valid region code>
-bq_dataset_name = <BigQuery Dataset name that you want to run the solution against>
-
-# Name for the BQ dataset created for bigquery-vector and/or logging
-bq_opendataqna_dataset_name = 'opendataqna' #defaulted value so that the solution use the dataset for logs and vector store etc
-bq_log_table_name = 'audit_log_table'  #defaulted value for log table name
-bq_table_list = None # either None or a list of table names in format ['reviews', 'ratings']. This will be used to filter specific tables from BigQuery
-```
-
-Once filled the config.ini something like below
-
-```
-[CONFIG]
-embedding_model = vertex
-description_model = gemini-1.0-pro
-data_source = bigquery
-vector_store = bigquery-vector
-debugging = yes
-logging = yes
-kgq_examples = no
-
-[GCP]
-project_id = three-p-o
-
-[PGCLOUDSQL]
-pg_region = us-central1
-pg_instance = pg15-opendataqna
-pg_database = opendataqna-db
-pg_user = pguser
-pg_password = pg123
-pg_schema = pg-vector-store
-
-[BIGQUERY]
-bq_dataset_region = us-central1
-bq_dataset_name = fda_food
-bq_opendataqna_dataset_name = opendataqna
-bq_log_table_name = audit_log_table
-bq_table_list= None
-```
-
-### 2. Creating Virtual Environment and Install Dependencies
-
-```
-cd applied-ai-engineering-samples
-git checkout opendataqna
-
 pip install poetry --quiet
 poetry lock
 poetry install --quiet
 poetry env info
 poetry shell
-
 ```
 Authenticate your credentials
 
 ```
 gcloud auth login
 gcloud auth application-default login
-
 ```
 ```
 gcloud services enable \
@@ -307,60 +138,98 @@ gcloud services enable \
 ```
 ```
 gcloud auth application-default set-quota-project <<Enter Project Id for using resources>>
-
 ```
+
 Enable APIs for the solution setup
 
 ```
 gcloud services enable \
   cloudapis.googleapis.com \
-  cloudbuild.googleapis.com \
-  compute.googleapis.com \
-  container.googleapis.com \
-  containerregistry.googleapis.com \
   iam.googleapis.com \
   run.googleapis.com \
   sqladmin.googleapis.com \
   aiplatform.googleapis.com \
-  artifactregistry.googleapis.com \
   bigquery.googleapis.com \
-  firebase.googleapis.com \
-  monitoring.googleapis.com \
-  storage.googleapis.com \
-  orgpolicy.googleapis.com --project <<Enter Project Id>>
+  storage.googleapis.com \ --project <<Enter Project Id>>
 
 ```
 
-### 3. Run [env_setup.py](/env_setup.py) to create vector store based on the configuration you did in Step-1
+#### 3. Run [env_setup.py](/env_setup.py) to create vector store based on the configuration you did in Step 1
 
 ```
 python env_setup.py
 ```
 
-### 4. Run [opendataqna.py](/opendataqna.py) to run the pipeline you just setup
+#### 4. Run [opendataqna.py](/opendataqna.py) to run the pipeline you just setup
 
-*user_question* : Enter your question in string
-*user_database* : Enter the BQ_DATASET_NAME for BigQuery sources or PG_SCHEMA for PostgreSQL sources (refer your [config.ini](/config.ini) file)
+The Open Data QnA SQL Generation tool can be conveniently used from your terminal or command prompt using a simple CLI interface. Here's how:
 
 ```
 python opendataqna.py --user_question "What are the top 5 cities with highest recalls?" --user_database "fda_food"
 ```
 
+Where
 
-#### If you are looking to deploy backend apis for the solution and frontend UI refer to the README.md under [`/backend-apis`](/backend-apis/)
+*user_question* : Enter your question in string
+
+*user_database* : Enter the BQ_DATASET_NAME for BigQuery sources or PG_SCHEMA for PostgreSQL sources (refer your [config.ini](/config.ini) file)
+
+
+**Optional Parameters**
+
+You can customize the pipeline's behavior using optional parameters. Here are some common examples:
+```
+# Enable the SQL debugger:
+python opendataqna.py --user_question "..." --user_database "..." --run_debugger
+
+# Execute the final generated SQL:
+python opendataqna.py --user_question "..." --user_database "..." --execute_final_sql
+
+# Change the number of debugging rounds:
+python opendataqna.py --user_question "..." --user_database "..." --debugging_rounds 5
+
+# Adjust similarity thresholds:
+python opendataqna.py --user_question "..." --user_database "..." --table_similarity_threshold 0.25 --column_similarity_threshold 0.4
+
+```
+
+You can find a full list of available options and their descriptions by running:
+
+```
+python opendataqna.py --help
+```
+
+
+📗 FAQs and Best Practices  
+-------------
+If you successfully set up the solution accelerator and want to start optimizing to your needs, you can follow the tips in the [`Best Practice doc`](/docs/best_practices.md).
+Additionally, if you stumble across any problems, take a look into the [`FAQ`](/docs/faq.md).
+
+If neither of these resources helps, feel free to reach out to us directly by raising an Issue. 
+
+⌨️ Backend APIs  
+-------------
+If you are looking to deploy backend apis for the solution, refer to the README.md under [`/backend-apis`](/backend-apis/).
+
+
+🖥️ Frontend  
+-------------
+If you are looking to deploy the frontend for the solution, refer to the README.md under [`/frontend`](/frontend/).
 
 
 
-
-Documentation
+📄 Documentation
 -------------
 
 * [Open Data QnA Source Code (GitHub)](<https://github.com/GoogleCloudPlatform/applied-ai-engineering-samples/tree/opendataqna>)
 * [Open Data QnA usage notebooks](/notebooks)
+* [`Architecture`](/docs/architecture.md)
+* [`FAQ`](/docs/faq.md)
+* [`Best Practice doc`](/docs/best_practices.md)
 
 
 
-Quotas and limits
+🚧 Quotas and limits
 ------------------
 
 [BigQuery quotas](<https://cloud.google.com/bigquery/quotas>) including hardware, software, and network components.
@@ -368,7 +237,7 @@ Quotas and limits
 [Gemini quotas](<https://cloud.google.com/gemini/docs/quotas>).
 
 
-License
+🪪 License
 -------
 
 Open Data QnA is distributed with the [Apache-2.0 license](<LICENSE>).
@@ -380,7 +249,7 @@ It also contains code derived from the following third-party packages:
 
 
 
-Getting Help
+🙋 Getting Help
 ----------
 
 If you have any questions or if you found any problems with this repository, please report through GitHub issues.
