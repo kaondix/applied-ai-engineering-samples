@@ -10,6 +10,14 @@
 </p>
 <h1 align="center">Open Data QnA - Chat with your SQL Database</h1> 
 
+_______________
+<div align="center"">
+  <strong>🚨 Version 1.2.0 is now live. Refer to the <a href="docs/changelog.md">Release Notes</a> for detailed information on updates and fixes. 🚨</strong>
+</div>
+
+_______________
+
+
 ✨ Overview
 -------------
 The **Open Data QnA** python library enables you to chat with your databases by leveraging LLM Agents on Google Cloud.
