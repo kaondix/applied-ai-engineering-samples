@@ -1,7 +1,7 @@
 Architecture
 -------------
 <p align="center">
-    <a href="Open Data QnA Solution Architecture.png">
+    <a href="OpenDataQnA Solution Architecture - v1.png">
         <img src="OpenDataQnA Solution Architecture - v1.png" alt="aaie image">
     </a>
 </p>
