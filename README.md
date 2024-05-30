@@ -59,7 +59,7 @@ It is built on a modular design and currently supports the following components:
 📏 Architecture
 -------------
 <p align="center">
-    <a href="utilities/imgs/Open Data QnA Solution Architecture.png">
+    <a href="utilities/imgs/OpenDataQnA Solution Architecture - v1.png">
         <img src="utilities/imgs/OpenDataQnA Solution Architecture - v1.png" alt="aaie image">
     </a>
 </p>
