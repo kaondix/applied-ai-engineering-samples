@@ -16,7 +16,12 @@ import time
 
 if 'None' in BQ_TABLE_LIST or 'none' in BQ_TABLE_LIST: BQ_TABLE_LIST=None
 
+if DATA_SOURCE == 'bigquery':
+    DATASET_REGION = BQ_REGION
 
+elif DATA_SOURCE == 'cloudsql-pg':
+    DATASET_REGION = PG_REGION
+    
 def setup_postgresql(pg_instance, pg_region, pg_database, pg_user, pg_password):
     """Sets up a PostgreSQL Cloud SQL instance with a database and user.
 
@@ -113,11 +118,7 @@ def create_vector_store():
     print("Initializing environment setup.")
     print("Loading configurations from config.ini file.")
 
-    if DATA_SOURCE == 'bigquery':
-        DATASET_REGION = BQ_REGION
 
-    elif DATA_SOURCE == 'cloudsql-pg':
-        DATASET_REGION = PG_REGION
 
     print("Data source set to: ", DATA_SOURCE)
 
