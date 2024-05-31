@@ -1,3 +1,18 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 from abc import ABC
 from .core import Agent 
 
@@ -58,6 +73,7 @@ class DescriptionAgent(Agent, ABC):
                         
                         DO NOT generate description more than two lines
                     """
+
                 else:
                      context_prompt = f"""
                         Generate table description short and crisp for the table {row['table_schema']}.{row['table_name']}
@@ -65,10 +81,9 @@ class DescriptionAgent(Agent, ABC):
                         Parameters:
                         - column metadata: {column_name_df.query(q).to_markdown(index = False)}
                         - table metadata: {table_desc_df.query(q).to_markdown(index = False)}
-
                         DO NOT generate description more than two lines
                     """
-
+                     
                 table_desc_df.at[index,'table_description']=self.generate_llm_response(context_prompt)
                 # print(row['table_description'])
                 llm_generated=llm_generated+1
@@ -96,23 +111,19 @@ class DescriptionAgent(Agent, ABC):
 
                     DO NOT generate description more than two lines
                 """
-                
                 else:
                     context_prompt = f"""
                     Generate short and crisp description for the column {row['table_schema']}.{row['table_name']}.{row['column_name']}
-
                     Remember that this description should help LLMs to help generate better SQL for any queries related to these columns.
-
                     Consider the below information to generate a good comment
-
                     Name of the column : {row['column_name']}
                     Data type of the column is : {row['data_type']}
                     Details of the table of this column are below:
                     {table_desc_df.query(q).to_markdown(index=False)}
                     Column Contrainst of this column are : {row['column_constraints']}
-
                     DO NOT generate description more than two lines
-                """
+                """                
+
                 column_name_df.at[index,'column_description']=self.generate_llm_response(prompt=context_prompt)
                 # print(row['column_description'])
                 llm_generated=llm_generated+1

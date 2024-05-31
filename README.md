@@ -249,8 +249,6 @@ gcloud run services delete <Cloud Run Service Name>
 For frontend, based on firebase: [Remove the firebase app](<https://support.google.com/firebase/answer/7047853?sjid=6757651181596811904-AP#how-to-remove>)
 
 
-
-
 📄 Documentation
 -------------
 

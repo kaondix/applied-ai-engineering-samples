@@ -1,3 +1,17 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 
 import asyncio
 from google.cloud import bigquery
@@ -21,7 +35,8 @@ if DATA_SOURCE == 'bigquery':
 
 elif DATA_SOURCE == 'cloudsql-pg':
     DATASET_REGION = PG_REGION
-    
+
+
 def setup_postgresql(pg_instance, pg_region, pg_database, pg_user, pg_password):
     """Sets up a PostgreSQL Cloud SQL instance with a database and user.
 
@@ -117,9 +132,6 @@ def create_vector_store():
 
     print("Initializing environment setup.")
     print("Loading configurations from config.ini file.")
-
-
-
     print("Data source set to: ", DATA_SOURCE)
 
     # Create PostgreSQL Instance is data source is different from PostgreSQL Instance

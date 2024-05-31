@@ -1,3 +1,19 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+
 import asyncio
 import asyncpg
 import pandas as pd
@@ -200,6 +216,7 @@ async def add_sql_embedding(user_question, generated_sql, database):
                                     database,
                                     user_question)
                 cleaned_sql =generated_sql.replace("\n", "")
+                
                 await conn.execute(
                                 "INSERT INTO example_prompt_sql_embeddings (table_schema, example_user_question, example_generated_sql, embedding) VALUES ($1, $2, $3, $4)",
                                 database,
@@ -220,6 +237,7 @@ async def add_sql_embedding(user_question, generated_sql, database):
                                     )
                         # embedding=np.array(row["embedding"])
             cleaned_sql = generated_sql.replace("\n", "")
+
             client.query_and_wait(f'''INSERT INTO `{PROJECT_ID}.{BQ_OPENDATAQNA_DATASET_NAME}.example_prompt_sql_embeddings` 
                         VALUES ("{database}","{user_question}" , 
                         "{cleaned_sql}",{emb})''')
