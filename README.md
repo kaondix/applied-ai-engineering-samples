@@ -73,8 +73,8 @@ Details on the Repository Structure can be found [`here`](/docs/repo_structure.m
 ⚙️ Prerequisites   
 -------------
 This library assumes that the source database is already set up in your GCP project. If a data source has not been set up, use the notebooks below to copy a public dataset from BigQuery to Cloud SQL PostgreSQL or from BigQuery into your GCP project.
-* PostgreSQL on Google Cloud SQL (Copy Sample Data: [0_CopyDataToCloudSqlPG.ipynb](0_CopyDataToCloudSqlPG.ipynb))
-* BigQuery (Copy Sample Data: [0_CopyDataToBigQuery.ipynb](0_CopyDataToBigQuery.ipynb))
+* PostgreSQL on Google Cloud SQL (Copy Sample Data: [0_CopyDataToCloudSqlPG.ipynb](/notebooks/0_CopyDataToCloudSqlPG.ipynb))
+* BigQuery (Copy Sample Data: [0_CopyDataToBigQuery.ipynb](/notebooks/0_CopyDataToBigQuery.ipynb))
 
 🏁 Getting Started: Quick Start   
 -------------
