@@ -106,7 +106,7 @@ This notebook guides you through the setup and execution of the Open Data QnA ap
 
 #### 2. Run the [2_Run_OpenDataQnA](/notebooks/2_Run_OpenDataQnA.ipynb)
 
-This notebook guides you by reading the configuration you setup with [1_Setup_OpenDataQnA](/notebooks/1_Setup_OpenDataQnA.ipynb) and running the pipeline to answer questions about your data.
+This notebook guides you by reading the configuration you setup with [1_Setup_OpenDataQnA](/1_Setup_OpenDataQnA) and running the pipeline to answer questions about your data.
 
 #### 3. [Loading Known Good SQL Examples](/notebooks/3_LoadKnownGoodSQL.ipynb)
    
