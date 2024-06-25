@@ -1,3 +1,13 @@
+_______________
+
+🚨**DEPRCATION WARNING🚨: THIS BRANCH IS NO LONGER BEING MAINTAINED, AS OPEN DATA QNA MOVED TO IT'S OWN DEDICATED REPOSITORY. 
+PLEASE FOLLOW THIS LINK TO GET TO THE OFFICIAL OPEN DATA QNA REPO ON GOOGLE CLOUD PLATFORM GITHUB: https://github.com/GoogleCloudPlatform/Open_Data_QnA**
+
+_______________
+
+
+
+
 <p align="center">
     <a href="utilities/imgs/aaie.png">
         <img src="utilities/imgs/aaie.png" alt="aaie image" width="auto" height="150">
